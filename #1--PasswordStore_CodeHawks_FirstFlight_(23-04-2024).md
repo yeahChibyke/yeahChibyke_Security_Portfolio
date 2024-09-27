@@ -58,10 +58,13 @@
 <summary>Code</summary>
 
    ```solidity
-      //q? Can non-owner set password? Yes
-      //q? Should non-owner be able to set password? No
-      //f! Any user can set password. MISSING ACCESS CONTROL!!!
-      function setPassword(string memory newPassword) external {         
+      * @notice This function allows only the owner to set a new password.
+      * @param newPassword The new password to set.
+      */
+      // @question can non-owner set password?
+      // @question should a non-owner be able to set password?
+      // @bug HIGH -- any user can set password -- missing access control
+      function setPassword(string memory newPassword) external {
          s_password = newPassword;
          emit SetNetPassword();
       }
