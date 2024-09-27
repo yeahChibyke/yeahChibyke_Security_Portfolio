@@ -120,9 +120,15 @@
    ```solidity
       /*
       * @notice This allows only the owner to retrieve the password.
-@-->  * @param newPassword The new password to set
+@-->  * @param newPassword The new password to set.
       */
-      function getPassword() external view returns (string memory) {}
+      // @bug INFORMATIONAL there is no `newPassword` parameter
+      function getPassword() external view returns (string memory) {
+         if (msg.sender != s_owner) {
+               revert PasswordStore__NotOwner();
+         }
+         return s_password;
+      }
    ```
 
 </details>
