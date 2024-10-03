@@ -15,7 +15,7 @@ The `PuppyRaffle::refund()` can be re-entered because it does not follow the `CE
 <details>
 <summary>Code</summary>
 
-    ```javascript
+    ```solidity
         /// @param playerIndex the index of the player to refund. You can find it externally by calling `getActivePlayerIndex`
         /// @dev This function will allow there to be blank spots in the array
         function refund(uint256 playerIndex) public {
@@ -33,6 +33,7 @@ The `PuppyRaffle::refund()` can be re-entered because it does not follow the `CE
             emit RaffleRefunded(playerAddress);
         }
     ```
+
 </details>
 
 #### Impact:
@@ -45,7 +46,7 @@ Create a `Hunter` contract 👇🏾:
 <details>
 <summary>Hunter</summary>
 
-    ```javascript
+    ```solidity
         // SPDX-License-Identifier: MIT
         pragma solidity ^0.7.6;
 
@@ -87,6 +88,7 @@ Create a `Hunter` contract 👇🏾:
         }
 
     ```
+
 </details>
 
 Modify `PuppyRaffleTest.t.sol` test contract 👇🏾:
@@ -128,7 +130,7 @@ Add the following test 👇🏾:
 <details>
 <summary>Code</summary>
 
-    ```javascript
+    ```solidity
         function testHunterReentrancyAttackSuccessful() public {
             address[] memory players = new address[](5);
             players[0] = playerOne;
@@ -153,6 +155,7 @@ Add the following test 👇🏾:
             assert(address(hunter).balance == 5e18);
         }
     ```
+
 </details>
 
 #### Tools Used:
@@ -170,7 +173,7 @@ Re-arrange the `PuppyRaffle:refund()` fund to follow `CEI` pattern:
 <details>
 <summary>Code</summary>
 
-    ```javascript
+    ```solidity
         function refund(uint256 playerIndex) public {
             address playerAddress = players[playerIndex];
             require(playerAddress == msg.sender, "PuppyRaffle: Only the player can refund");
@@ -185,6 +188,7 @@ Re-arrange the `PuppyRaffle:refund()` fund to follow `CEI` pattern:
             emit RaffleRefunded(playerAddress);
         }
     ```
+
 </details>
 
 Also the `nonReentrant` modifier from [OpenZeppelin `ReentrancyGuard`](https://docs.openzeppelin.com/contracts/4.x/api/security#ReentrancyGuard) could be used.
@@ -199,7 +203,7 @@ The `PuppyRaffle::enterRaffle()` conducts a duplicate address check whenever a n
 <details>
 <summary>Code</summary>
 
-    ```javascript
+    ```solidity
     // Check for duplicates
         for (uint256 i = 0; i < players.length - 1; i++) {
             for (uint256 j = i + 1; j < players.length; j++) {
@@ -225,7 +229,7 @@ If there are two sets of players, each set being 500 players large, below is the
   <summary>PoC</summary>
   Place the following test into the `PuppyRaffleTest.t.sol` test contract
     
-    ```javascript
+    ```solidity
         function testDOS() public {
             // address[] memory players = new address[](1);
             // players[0] = playerOne;
@@ -272,6 +276,7 @@ If there are two sets of players, each set being 500 players large, below is the
             assert(gasUsedForFirstFiveHundred < gasUsedForNextFiveHundred);
         }
     ```
+
   </details>
 
 #### Tools Used:
@@ -281,6 +286,6 @@ If there are two sets of players, each set being 500 players large, below is the
 #### Recommended Mitigation:
  Here are a few recommended mitigations:
 
-- Consider using a maping to check for duplicates. This will allow for constant time look up of whether a user has already entered the raffle.
+- Consider using a `mapping` to check for duplicates. This will allow for constant time look up of whether a user has already entered the raffle.
 - Consider allowing duplicate addresses. Especially since users can make new wallet addressess regardles, so a duplicate check doesn't prevent the same peron from entering multiple times, omly the same wallet address.
 - Alternatively, [OpenZeppelin's `EnumerableSet` Library](https://docs.openzeppelin.com/contracts/4.x/api/utils#EnumerableSet) could be used.
