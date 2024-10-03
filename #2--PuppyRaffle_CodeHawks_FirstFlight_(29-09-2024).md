@@ -15,7 +15,7 @@ The `PuppyRaffle::refund()` can be re-entered because it does not follow the `CE
 <details>
 <summary>Code</summary>
 
-    ```solidity
+    ```javascript
         /// @param playerIndex the index of the player to refund. You can find it externally by calling `getActivePlayerIndex`
         /// @dev This function will allow there to be blank spots in the array
         function refund(uint256 playerIndex) public {
@@ -45,7 +45,7 @@ Create a `Hunter` contract 👇🏾:
 <details>
 <summary>Hunter</summary>
 
-    ```solidity
+    ```javascript
         // SPDX-License-Identifier: MIT
         pragma solidity ^0.7.6;
 
@@ -128,7 +128,7 @@ Add the following test 👇🏾:
 <details>
 <summary>Code</summary>
 
-    ```solidity
+    ```javascript
         function testHunterReentrancyAttackSuccessful() public {
             address[] memory players = new address[](5);
             players[0] = playerOne;
@@ -170,10 +170,8 @@ Re-arrange the `PuppyRaffle:refund()` fund to follow `CEI` pattern:
 <details>
 <summary>Code</summary>
 
-    ```solidity
-       /// @param playerIndex the index of the player to refund. You can find it externally by calling `getActivePlayerIndex`
-       /// @dev This function will allow there to be blank spots in the array
-       function refund(uint256 playerIndex) public {
+    ```javascript
+        function refund(uint256 playerIndex) public {
             address playerAddress = players[playerIndex];
             require(playerAddress == msg.sender, "PuppyRaffle: Only the player can refund");
             require(playerAddress != address(0), "PuppyRaffle: Player already refunded, or is not active");
@@ -185,7 +183,7 @@ Re-arrange the `PuppyRaffle:refund()` fund to follow `CEI` pattern:
             payable(msg.sender).sendValue(entranceFee);
 
             emit RaffleRefunded(playerAddress);
-       }
+        }
     ```
 </details>
 
@@ -201,7 +199,7 @@ The `PuppyRaffle::enterRaffle()` conducts a duplicate address check whenever a n
 <details>
 <summary>Code</summary>
 
-    ```solidity
+    ```javascript
     // Check for duplicates
         for (uint256 i = 0; i < players.length - 1; i++) {
             for (uint256 j = i + 1; j < players.length; j++) {
@@ -227,7 +225,7 @@ If there are two sets of players, each set being 500 players large, below is the
   <summary>PoC</summary>
   Place the following test into the `PuppyRaffleTest.t.sol` test contract
     
-    ```solidity
+    ```javascript
         function testDOS() public {
             // address[] memory players = new address[](1);
             // players[0] = playerOne;
