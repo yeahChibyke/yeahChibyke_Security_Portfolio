@@ -200,8 +200,8 @@ Also the `nonReentrant` modifier from [OpenZeppelin `ReentrancyGuard`](https://d
 #### Description:       
 The `PuppyRaffle::enterRaffle()` conducts a duplicate address check whenever a new address wants to join the raffle, by looping through the `players` array. This method means that gas costs for performing that transaction (entering the raffle) are significantly cheaper for players who enter at the start of the raffle, and significantly costlier for players who enter the raffle at later stages. Every new player, is an extra `address` the `PuppyRaffle::enterRaffle()` function has to loop through when conducting duplicate address check.
 
-<details>
-<summary>Code</summary>
+ <details>
+ <summary>Code</summary>
 
     ```solidity
     // Check for duplicates
