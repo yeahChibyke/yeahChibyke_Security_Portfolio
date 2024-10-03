@@ -171,9 +171,9 @@ Re-arrange the `PuppyRaffle:refund()` fund to follow `CEI` pattern:
 <summary>Code</summary>
 
     ```solidity
-        /// @param playerIndex the index of the player to refund. You can find it externally by calling `getActivePlayerIndex`
-        /// @dev This function will allow there to be blank spots in the array
-        function refund(uint256 playerIndex) public {
+       /// @param playerIndex the index of the player to refund. You can find it externally by calling `getActivePlayerIndex`
+       /// @dev This function will allow there to be blank spots in the array
+       function refund(uint256 playerIndex) public {
             address playerAddress = players[playerIndex];
             require(playerAddress == msg.sender, "PuppyRaffle: Only the player can refund");
             require(playerAddress != address(0), "PuppyRaffle: Player already refunded, or is not active");
@@ -185,7 +185,7 @@ Re-arrange the `PuppyRaffle:refund()` fund to follow `CEI` pattern:
             payable(msg.sender).sendValue(entranceFee);
 
             emit RaffleRefunded(playerAddress);
-        }
+       }
     ```
 </details>
 
