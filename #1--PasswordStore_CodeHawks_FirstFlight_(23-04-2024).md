@@ -1,16 +1,22 @@
-![](security_logo.jpg)
+![](logo.png)
+![](./img/password-store.png)
 
 # Security Report for the PasswordStore CodeHawks FirstFlight Contest **learning*
 
 **Source:** https://github.com/Cyfrin/2023-10-PasswordStore
 
+-----------------------------
+
 ### [H-1] Storing the password on-chain makes it visible to anyone, thus no longer private
 
-**Description:** All data stored on-chain is visible to anyone and can be read directly from the blockchain. The `PasswordStore::s_password` variable is intended to be private, and accessible only by the owner of the contract through the `PasswordStore::getPassword()` function.
+#### Description:
+All data stored on-chain is visible to anyone and can be read directly from the blockchain. The `PasswordStore::s_password` variable is intended to be private, and accessible only by the owner of the contract through the `PasswordStore::getPassword()` function.
 
-**Impact:** Anyone can read the supposed private password, thus breaking the functionality of the protocol.
+#### Impact:
+Anyone can read the supposed private password, thus breaking the functionality of the protocol.
 
-**Proof of Concept:** The test case below shows how anyone can read the password directly from the blockchain.
+#### Proof of Concept: 
+The test case below shows how anyone can read the password directly from the blockchain.
 
    1. Create a locally running chain
       
@@ -48,11 +54,19 @@
       myPassword
       ```
 
-**Recommended Mitigation:** Due to this, the overall architecture of the contract should be rethought. One could encrypt the password off-chain, and then store the encrypted password on-chain. This would require the user to remember another password off-chain to decrypt the stored password. However, you're also likely want to remove the view function as you wouldn't want the user to accidentally send a transaction with this decryption key.
+#### Tools Used:
+   - Manual Review
+   - Foundry
+
+#### Recommended Mitigation:
+ Due to this, the overall architecture of the contract should be rethought. One could encrypt the password off-chain, and then store the encrypted password on-chain. This would require the user to remember another password off-chain to decrypt the stored password. However, you're also likely want to remove the view function as you wouldn't want the user to accidentally send a transaction with this decryption key.
+
+ ------------------------
 
 ### [H-2] `PasswordStore::setPassword()` has no access controls. Non-owner can change the password
 
-**Description:** The `PasswordStore::setPassword()` function is set to be an `external` function, however the atspec and overall purpose of the contract is that `This function allows only the owner to set a new password`.
+#### Description:
+The `PasswordStore::setPassword()` function is set to be an `external` function, however the atspec and overall purpose of the contract is that `This function allows only the owner to set a new password`.
 
 <details>
 <summary>Code</summary>
@@ -71,12 +85,14 @@
    ```
 </details>
 
-**Impact:** Anyone can set/change the password of the contract, thus breaking the functionality of the contract.
+#### Impact:
+Anyone can set/change the password of the contract, thus breaking the functionality of the contract.
 
-**Proof of Concept:** Add the following to the `PasswordStore.t.sol` test file
+#### Proof of Concept:
+Add the following to the `PasswordStore.t.sol` test file
 
 <details>
-<summary>Code</summary>
+<summary>PoC</summary>
 
    ```solidity
       function test_anyone_can_set_password(address randomaddress) public {
@@ -93,10 +109,16 @@
    ```
 </details>
 
-**Recommended Mitigation:** Add an access control conditional to the `PasswordStore::setPassword()` function
+#### Tools Used:
+   - Manual Review
+   - Remix
+   - Foundry
+
+#### Recommended Mitigation:
+Add an access control conditional to the `PasswordStore::setPassword()` function
 
 <details>
-<summary>Code</summary>
+<summary>Mitigation</summary>
 
    ```solidity
       function setPassword(string memory newPassword) external {
@@ -110,9 +132,11 @@
 
 </details>
 
+-------------------------------------------------
+
 ### [I-1] The NatSpec of the `PasswordStore::getPassword()` function indicates a parameter that doesn't exist, causing the NatSpec to be incorrect.
 
-**Description:** 
+#### Description: 
 
 <details>
 <summary>Code</summary>
@@ -135,9 +159,14 @@
 
 The function signature of `PasswordStore::getPassword()` is `getPassword()` and not `getPassword(string)` as the NatSpec says.
 
-**Impact:** The NatSpec is incorrect.
+#### Impact:
+The NatSpec is incorrect.
 
-**Recommended Mitigation:** Remove the incorrect NatSpec line.
+#### Tools Used:
+   - Manual Review
+
+#### Recommended Mitigation: 
+Remove the incorrect NatSpec line.
 
    ```diff
 -     * @param newPassword The new password to set
