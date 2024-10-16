@@ -5,8 +5,6 @@
 
 **Source:** https://github.com/Cyfrin/2023-10-Puppy-Raffle
 
---------------------------------------------
-
 ## High Issues
 
 ### [H-1] Weak randomness in `PuppyRaffle::selectWinner()` allows malicious users to influence or predict the winner as well as the winning puppy
@@ -440,8 +438,7 @@ Refactor the `require` statement in the `PuppyRaffle::withdrawFees()` as so:
 
 Or remove it entirely.
 
---- --- --- --- --- --- --- --- --- --- --- ---
---- --- --- --- --- --- --- --- --- --- --- ---
+
 
 ## Medium Issues
 
@@ -567,8 +564,7 @@ Also, true winners could not get paid out and someone else could take their mone
 - Do not allow smart contract wallet entrants, or
 - Create a `mapping` of `addresses => payout` so winners can pull their funds out by themselves with a new `claimPrize()` function, putting the responsibility of prize claiming on the winner.
 
---- --- --- --- --- --- --- --- --- --- --- ---
---- --- --- --- --- --- --- --- --- --- --- ---
+
 
 ## Low Issues
 
@@ -636,8 +632,7 @@ Any of these mitigations would work:
 - Reserve the 0th position for any competition.
 - Return an `int256` such that the `PuppyRaffle::getActivePlayerIndex()` returns `-1` if the player is not active
 
---- --- --- --- --- --- --- --- --- --- --- ---
---- --- --- --- --- --- --- --- --- --- --- ---
+
 
 ## Gas Issues
 
@@ -664,8 +659,7 @@ i.e.
     uint256 playerLength = players.length;
 ```
 
---- --- --- --- --- --- --- --- --- --- --- ---
---- --- --- --- --- --- --- --- --- --- --- ---
+
 
 ## Informational Issues
 
