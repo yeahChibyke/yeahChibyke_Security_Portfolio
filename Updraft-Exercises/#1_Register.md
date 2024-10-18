@@ -107,6 +107,8 @@ I wrote the following tests to test the following scenarios:
 
 Yes... the function will revert if the `msg.value` is less than 1 ETH
 
+------------
+
 - In scenarios where `msg.value` is more than 1 ETH, will the contract give back the extra to the `msg.sender` (as stated in the documentation)?
 
 ```solidity
