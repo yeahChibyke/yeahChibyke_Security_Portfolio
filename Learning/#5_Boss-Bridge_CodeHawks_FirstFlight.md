@@ -1,5 +1,5 @@
-![](logo.png)
-![](./img/boss-bridge.png)
+![](../logo.png)
+![](../img/boss-bridge.png)
 
 # Security Report for the Boss-Bridge CodeHawks FirstFlight Contest **learning*
 

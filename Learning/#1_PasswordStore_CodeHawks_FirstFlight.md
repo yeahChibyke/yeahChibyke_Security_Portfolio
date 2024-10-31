@@ -1,5 +1,5 @@
-![](logo.png)
-![](./img/password-store.png)
+![](../logo.png)
+![](../img/password-store.png)
 
 # Security Report for the PasswordStore CodeHawks FirstFlight Contest **learning*
 

@@ -1,5 +1,5 @@
-![](logo.png)
-![](./img/t-swap.png)
+![](../logo.png)
+![](../img/t-swap.png)
 
 # Security Report for the TSwap Protocol **learning*
 

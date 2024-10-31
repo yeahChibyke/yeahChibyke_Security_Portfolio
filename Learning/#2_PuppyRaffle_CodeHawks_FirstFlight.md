@@ -1,5 +1,5 @@
-![](logo.png) 
-![](./img/puppy-raffle.png)
+![](../logo.png) 
+![](../img/puppy-raffle.png)
 
 # Security Report for the PuppyRaffle CodeHawks FirstFlight Contest **learning*
 

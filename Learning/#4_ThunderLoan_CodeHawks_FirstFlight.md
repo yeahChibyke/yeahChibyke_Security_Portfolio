@@ -1,5 +1,5 @@
-![](logo.png)
-![](./img/thunder-loan.png)
+![](../logo.png)
+![](../img/thunder-loan.png)
 
 # Security Report for the ThunderLoan CodeHawks FirstFlight Contest **learning*
 
