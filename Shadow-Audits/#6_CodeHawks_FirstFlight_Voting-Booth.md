@@ -1,5 +1,5 @@
 ![](../logo.png)
-<img src="../img/voting-booth.png" alt="Santa List" height="320" />
+<img src="../img/voting-booth.png" alt="Voting Booth" height="320" />
 
 # Security Report for the Voting Booth CodeHawks FirstFlight Contest **shadow audit*
 
