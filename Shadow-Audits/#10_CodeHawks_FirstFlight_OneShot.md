@@ -1,11 +1,11 @@
 ![](../logo.png)
 <img src="../img/oneshot.png" alt="OneShot" height="320" />
 
-# Security Report for the OneShot CodeHawks FirstFlight Contest **shadow audit*
+# Security Report for the OneShot CodeHawks FirstFlight Contest \*_shadow audit_
 
 ## High Issues
 
-### It is possible to challenge with another rapper's NFT in `RapBattle::goOnStageOrBattle()` function
+### [H-1] It is possible to challenge with another rapper's NFT in `RapBattle::goOnStageOrBattle()` function
 
 **Description:**
 
@@ -59,3 +59,184 @@ Add a check in the `goOnStageOrBattle()` function to ensure that the challenger 
         }
     }
 ```
+
+### [H-2] A rapper can avoid losing their `CredTokens`when they are the challengers in `RapBattle::goOnStageOrBattle()` by not approving
+
+**Description:**
+
+In the `goOnStageOrBattle()` function, a rapper is assigned as `challenger` if there is already a `defender`.  
+If there is already a `defender` at the time a rapper calls the `goOnStageOrBattle()` function, the `RapBattle::_battle()` internal function, and it is in this internal function that the winner is determined.  
+But because the `challenger` does not grant `CredToken` approval to the `Rapbattle` contract, the function ends up performing unexpectedly.
+
+**Impact:**
+
+A `challenger` suffers no risk to their `CredToken` when they call the `goOnStageorBattle()` function.  
+A `defender` gets no winnings from a battle they win, instead they lose it to the `RapBattle` contract.
+
+**PoC:**
+
+Add the following test to the `OneShotTest.t.sol` file:
+
+```solidity
+    function test_token_prank() public twoSkilledRappers {
+        uint256 userInitBal = cred.balanceOf(user);
+        uint256 challengerInitBal = cred.balanceOf(challenger);
+        uint256 rapBattleInitBal = cred.balanceOf(address(rapBattle));
+
+        vm.startPrank(user);
+        oneShot.approve(address(rapBattle), 0);
+        cred.approve(address(rapBattle), 10);
+        rapBattle.goOnStageOrBattle(0, 3);
+        vm.stopPrank();
+
+        vm.startPrank(challenger);
+        oneShot.approve(address(rapBattle), 1);
+
+        vm.warp(1 days);
+        vm.expectRevert();
+        rapBattle.goOnStageOrBattle(1, 3);
+        vm.stopPrank();
+
+        uint256 userFinalBal = cred.balanceOf(user);
+        uint256 challengerFinalBal = cred.balanceOf(challenger);
+        uint256 rapBattleFinalBal = cred.balanceOf(address(rapBattle));
+
+        assert(challengerFinalBal == challengerInitBal); // challenger's token balance remains unchanged
+        assert(userInitBal > userFinalBal); // user loses tokens despite them being winners of rap battles
+        assert(rapBattleFinalBal > rapBattleInitBal); // rap battle contract gains user's tokens
+    }
+```
+
+**Recommended Mitigation:**
+
+Ensure `challenger` gives approval before going into battle.  
+This is done by calling `CredToken::transferFrom()` before `CredToken::_battle()`
+
+```diff
+    function goOnStageOrBattle(uint256 _tokenId, uint256 _credBet) external {
+        ...
+        ...
+        else {
+-           // credToken.transferFrom(msg.sender, address(this), _credBet);
++           credToken.transferFrom(msg.sender, address(this), _credBet);
+            _battle(_tokenId, _credBet);
+        }
+    }
+```
+
+Then update the `CredToken::_battle()` function to transfer the `totalPrize` of tokens since both the `defender` and `challenger` would have already transferred their tokens
+
+```diff
+    function _battle(uint256 _tokenId, uint256 _credBet) internal {
+        ...
+        ...
+        // If random <= defenderRapperSkill -> defenderRapperSkill wins, otherwise they lose
+        if (random <= defenderRapperSkill) {
+            // We give them the money the defender deposited, and the challenger's bet
+-           credToken.transfer(_defender, defenderBet);
+-           credToken.transferFrom(msg.sender, _defender, _credBet);
++           credToken.transfer(_defender, totalPrize);
+        } else {
+-           // Otherwise, since the challenger never sent us the money, we just give the money in the contract
+-           credToken.transfer(msg.sender, _credBet);
++           // Otherwise, send the totalPrize to the challenger
++           credToken.transfer(msg.sender, totalPrize);
+        }
+        totalPrize = 0;
+        // Return the defender's NFT
+        oneShotNft.transferFrom(address(this), _defender, defenderTokenId);
+    }
+```
+
+## Medium Issues
+
+### [M-1] `Streets::unstake()` function mints incorrect amount of `CredToken` to stakers
+
+**Description:**
+
+The `unstake()` allows rappers to unstake their NFTs and get `CredToken` according to how many days they were staked... for a max of 4 days.   
+But, whereas `CredToken` is an `ERC20` with decimal place of `18`, the `unstake()` function is rewarding the rappers `0.000000000000000001` `CredToken`, instead of `1e18` `CredToken`.
+
+```solidity
+    function unstake(uint256 tokenId) external {
+        ...
+        ...
+        // Apply changes based on the days staked
+        if (daysStaked >= 1) {
+            stakedRapperStats.weakKnees = false;
+-->         credContract.mint(msg.sender, 1);
+        }
+        if (daysStaked >= 2) {
+            stakedRapperStats.heavyArms = false;
+-->         credContract.mint(msg.sender, 1);
+        }
+        if (daysStaked >= 3) {
+            stakedRapperStats.spaghettiSweater = false;
+-->         credContract.mint(msg.sender, 1);
+        }
+        if (daysStaked >= 4) {
+            stakedRapperStats.calmAndReady = true;
+-->         credContract.mint(msg.sender, 1);
+        }
+        ...
+        ...
+    }
+```
+
+**Impact:**
+
+Rappers are rewarded with way less amount of `CredToken` than they should be getting.
+
+**PoC**:
+
+Add the following test to the `OneShotTest.t.sol` file:
+
+```solidity
+    function test_token_error() public mintRapper {
+        vm.startPrank(user);
+        oneShot.approve(address(streets), 0);
+        streets.stake(0);
+        vm.stopPrank();
+        vm.warp(1 days + 1);
+        vm.startPrank(user);
+        streets.unstake(0);
+
+        assert(cred.balanceOf(user) == 1);
+        assert(cred.balanceOf(user) != 1e18);
+    }
+```
+
+**Recommended Mitigation:**
+
+Refactor the reward maths of the `unstake()` function as so:
+
+```diff
+    function unstake(uint256 tokenId) external {
+        ...
+        ...
+        // Apply changes based on the days staked
+        if (daysStaked >= 1) {
+            stakedRapperStats.weakKnees = false;
+-           credContract.mint(msg.sender, 1);
++           credContract.mint(msg.sender, 1e18);
+        }
+        if (daysStaked >= 2) {
+            stakedRapperStats.heavyArms = false;
+-           credContract.mint(msg.sender, 1);
++           credContract.mint(msg.sender, 1e18);
+        }
+        if (daysStaked >= 3) {
+            stakedRapperStats.spaghettiSweater = false;
+-           credContract.mint(msg.sender, 1);
++           credContract.mint(msg.sender, 1e18);
+        }
+        if (daysStaked >= 4) {
+            stakedRapperStats.calmAndReady = true;
+-           credContract.mint(msg.sender, 1);
++           credContract.mint(msg.sender, 1e18);
+        }
+        ...
+        ...
+    }
+```
+
