@@ -148,6 +148,24 @@ Then update the `CredToken::_battle()` function to transfer the `totalPrize` of 
     }
 ```
 
+### [H-3] A user can mint multiple rapper NFTs and use them to game the system
+
+**Description:**
+
+According to the `README` and all available `NatSpec`, it can be deduced that the overall flow and features of the protocol is built on the assumption that users mint only one rapper NFT. But, since there is no restriction on how many NFTs a user can mint, a malicius user can mint as many NFTs as they want, and use them to game the system.
+
+Also, it is possible for users to transfer their NFTs to another user.
+
+**Impact:**
+
+A user can mint as many NFTs as they want, stake them, and then use them to battle rap.... even against themselves. SInce it is a number's game, they stand to gain more than they lose.   
+If this is a user who is aware of the other security risks that exist in the system, they can use this knowledge and their multiple NFTs for great ruin of the protocol.  
+Also, since users can transfer NFTs, a malicious user can transfer their NFts to an accomplice to an accomplice, who can then go ahead to battle rap with this NFT, win some `CredToken`, and then send the NFT back to the owner.
+
+**Recommended Mitigation:**
+
+There would need to be a rethink of the protocol. Guidelines would have to be put in place to prevent against multiple minting as well as users being able to transfer minted NFTs to other users.
+
 ## Medium Issues
 
 ### [M-1] `Streets::unstake()` function mints incorrect amount of `CredToken` to stakers
